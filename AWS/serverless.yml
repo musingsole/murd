@@ -1,0 +1,74 @@
+service: woodwellapi
+package:
+  individually: false
+
+provider:
+  name: aws
+  stage: prod
+  runtime: python3.6
+  region: us-east-1
+
+plugins:
+  - serverless-python-requirements
+custom:
+  pythonRequirements:
+    dockerizePip: non-linux
+    noDeploy: []
+
+resources:
+  Resources:
+    woodwellrole:
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /woodwellapi/
+        RoleName: woodwellrole
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+                Action: sts:AssumeRole
+          Policies:
+            - PolicyName: woodwellpolicy
+              PolicyDocument:
+                Version: '2012-10-17'
+                Statement:
+                  - execute-api:*
+                  - apigateway:Get
+                  - api:*
+                Resource: "*"
+  
+            - Effect: Allow
+              Action:
+                - logs:*
+              Resource: "arn:aws:logs:*:*:*"
+
+functions:
+  woodwellapi:
+    name: woodwellapi
+    handler: woodwell_DDB_API.lambda_handler
+    memorySize: 128
+    timeout: 30
+    role:
+      Fn::GetAtt:
+        - woodwellrole
+        - Arn    
+    events:
+      - http:
+          path: /woodwell
+          method: get
+      - http:
+          path: /woodwell
+          method: post
+      - http:
+          path: /woodwell/plant
+          method: post
+      - http:
+          path: /woodwell/harvest
+          method: get
+      - http:
+          path: /woodwell/cut
+          method: post
+
