@@ -68,7 +68,7 @@ class Murd:
 
     @staticmethod
     def row_col_to_key(row, col):
-        return "{}{}{}".format(row, Woodwell.row_col_sep, col)
+        return "{}{}{}".format(row, Murd.row_col_sep, col)
 
     def update(
         self,
@@ -102,23 +102,23 @@ class Murd:
 
         if col is not None:
             try:
-                return MurdMemory(**murd[murd.row_col_to_key(row, col)])
+                return [MurdMemory(**murd[Murd.row_col_to_key(row, col)])]
             except Exception:
-                raise Exception("Unable to locate mem: {}".format(Woodwell.row_col_to_key(row, col)))
+                raise Exception("Unable to locate mem: {}".format(Murd.row_col_to_key(row, col)))
 
-        keys = list(murd.keys())
-        if greater_than_mem is None and less_than_mem is not None:
+        matched = list(murd.keys())
+
+        if col is not None:
+            prefix = "{}{}{}".format(row, Murd.row_col_sep, col)
+            matched = [key for key in matched if prefix in key]
+
+        if less_than_mem is not None:
+            minimum = self.row_col_to_key(row, less_than_mem)
+            matched = [key for key in matched if key > minimum]
+
+        if greater_than_mem is not None:
             maximum = self.row_col_to_key(row, less_than_mem)
-            matched = [key for key in keys if key < maximum]
-        elif less_than_mem is None and greater_than_mem is not None:
-            minimum = self.row_col_to_key(row, greater_than_mem)
-            matched = [key for key in keys if minimum < key]
-        elif greater_than_mem is not None and less_than_mem is not None:
-            minimum = self.row_col_to_key(row, greater_than_mem)
-            maximum = self.row_col_to_key(row, less_than_mem)
-            matched = [key for key in keys if minimum < key < maximum]
-        else:
-            matched = [key for key in keys if row in key] 
+            matched = [key for key in matched if maximum > key]
 
         results = [MurdMemory(**murd[key]) for key in matched]
 
