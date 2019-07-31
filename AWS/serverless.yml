@@ -1,4 +1,4 @@
-service: woodwellapi
+service: ddbmurdapi
 package:
   individually: false
 
@@ -17,11 +17,11 @@ custom:
 
 resources:
   Resources:
-    woodwellrole:
+    MurdRole:
       Type: AWS::IAM::Role
       Properties:
-        Path: /woodwellapi/
-        RoleName: woodwellrole
+        Path: /murd/
+        RoleName: MurdRole
         AssumeRolePolicyDocument:
           Version: '2012-10-17'
           Statement:
@@ -29,46 +29,38 @@ resources:
               Principal:
                 Service:
                   - lambda.amazonaws.com
-                Action: sts:AssumeRole
-          Policies:
-            - PolicyName: woodwellpolicy
-              PolicyDocument:
-                Version: '2012-10-17'
-                Statement:
-                  - execute-api:*
-                  - apigateway:Get
-                  - api:*
-                Resource: "*"
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: murdPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: "Allow"
+                  Action:
+                    - logs:*
+                    - execute-api:*
+                    - apigateway:Get
+                    - api:*
+                  Resource: "*"
   
-            - Effect: Allow
-              Action:
-                - logs:*
-              Resource: "arn:aws:logs:*:*:*"
-
 functions:
-  woodwellapi:
-    name: woodwellapi
-    handler: woodwell_DDB_API.lambda_handler
+  ddbmurdapi:
+    name: ddbmurdapi
+    handler: murd_ddb_api.lambda_handler
     memorySize: 128
     timeout: 30
     role:
       Fn::GetAtt:
-        - woodwellrole
+        - MurdRole
         - Arn    
     events:
       - http:
-          path: /woodwell
+          path: /murd
           method: get
       - http:
-          path: /woodwell
-          method: post
+          path: /murd
+          method: put
       - http:
-          path: /woodwell/plant
-          method: post
-      - http:
-          path: /woodwell/harvest
-          method: get
-      - http:
-          path: /woodwell/cut
-          method: post
+          path: /murd
+          method: delete
 

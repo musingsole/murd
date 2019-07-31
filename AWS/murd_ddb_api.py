@@ -1,9 +1,9 @@
 import json
 from LambdaPage import LambdaPage
-from woodwell_DDB import DDBwoodwell
+from murd_dbb import DDBMurd
 
 
-aww = DDBwoodwell(name="aww")
+murd = DDBMurd()
 
 
 class Curator:
@@ -11,48 +11,66 @@ class Curator:
         pass
 
 
-def plant_handler(event):
-    """ /plant Endpoint Handler """
+def update_handler(event):
+    """ /update Endpoint Handler """
 
     # Check authorization
 
-    # Get new trees from event
-    trees = []
+    # Get new mems from event
+    body = json.loads(event['body'])
+    mems = body['mems']
+    identifier = body['identifier'] if 'identifier' in body else 'Unidentified'
 
-    # Store new trees in memory
-    aww.plant(trees=trees)
+    # Store new mems in memory
+    murd.update(mems=mems)
+
+    return 200
 
 
-def harvest_handler(event):
-    """ /harvest Endpoint Handler """
+def read_handler(event):
+    """ /read Endpoint Handler """
     # Check authorization
 
-    # Get harvest constraints
-    harvest_kwargs = {}
+    # Get read constraints
+    body = json.loads(event['body'])
+    row = body['row']
+    col = body['col'] if 'col' in body else None
+    greater_than_mem = body['greater_than_mem'] if 'greater_than_mem' in body else None
+    less_than_mem = body['less_than_mem'] if 'less_than_mem' in body else None
 
-    harvest = aww.harvest(**harvest_kwargs)
+    read_kwargs = {
+        "row": row,
+        "col": col,
+        "greater_than_mem": greater_than_mem,
+        "less_than_mem": less_than_mem
+    }
 
-    return 200, json.dumps(harvest)
+    read = murd.read(**read_kwargs)
+
+    return 200, json.dumps(read)
 
 
-def cut_handler(event):
-    """ /cut Endpoint Handler """
+def delete_handler(event):
+    """ /delete Endpoint Handler """
     # Check authorization
 
-    # Get trees to cut
-    trees = []
-    aww.cut(trees)
+    # Get new mems from event
+    body = json.loads(event['body'])
+    mems = body['mems']
+ 
+    murd.delete(mems)
     
     return 200
 
+
 def create_lambda_page():
     page = LambdaPage()
-    page.add_endpoint("post", "/woodwell", plant_handler, 'application/json')
-    page.add_endpoint("post", "/woodwell/plant", plant_handler, 'application/json')
-    page.add_endpoint("get", "/woodwell", harvest, 'application/json')
-    page.add_endpoint("get", "/woodwell/harvest", harvest, 'application/json')
-    page.add_endpoint("post", "/woodwell/cut", cut, 'application/json')
-    page.add_endpoint("post", "/woodwell/cut", cut, 'application/json')
+    page.add_endpoint("put", "/murd", update_handler, 'application/json')
+    page.add_endpoint("put", "/murd/update", update_handler, 'application/json')
+    page.add_endpoint("get", "/murd", read, 'application/json')
+    page.add_endpoint("get", "/murd/read", read, 'application/json')
+    page.add_endpoint("delete", "/murd", delete, 'application/json')
+    page.add_endpoint("delete", "/murd/delete", delete, 'application/json')
     
     return page
 

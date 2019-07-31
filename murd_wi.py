@@ -1,7 +1,6 @@
 import json
 import os
-from WiPyFunctions import get_timestamp
-from run_async import run_async
+from edaphic.wipy_utilities import get_timestamp, run_async
 
 
 class MurdMemory(dict):
