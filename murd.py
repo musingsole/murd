@@ -94,8 +94,8 @@ class Murd:
         self,
         row,
         col=None,
-        greater_than_mem=None,
-        less_than_mem=None,
+        greater_than_col=None,
+        less_than_col=None,
         **kwargs
     ):
         murd = json.loads(self.murd)
@@ -112,12 +112,12 @@ class Murd:
             prefix = "{}{}{}".format(row, Murd.row_col_sep, col)
             matched = [key for key in matched if prefix in key]
 
-        if less_than_mem is not None:
-            minimum = self.row_col_to_key(row, less_than_mem)
+        if less_than_col is not None:
+            minimum = self.row_col_to_key(row, less_than_col)
             matched = [key for key in matched if key > minimum]
 
-        if greater_than_mem is not None:
-            maximum = self.row_col_to_key(row, less_than_mem)
+        if greater_than_col is not None:
+            maximum = self.row_col_to_key(row, less_than_col)
             matched = [key for key in matched if maximum > key]
 
         results = [MurdMemory(**murd[key]) for key in matched]
@@ -131,8 +131,8 @@ class Murd:
         self,
         row,
         col=None,
-        greater_than_mem=None,
-        less_than_mem=None,
+        greater_than_col=None,
+        less_than_col=None,
         **kwargs
     ):
         if type(row) is list:
@@ -140,8 +140,8 @@ class Murd:
             arg_sets = [{
                 "row": row,
                 "col": col,
-                "greater_than_mem": greater_than_mem,
-                "less_than_mem": less_than_mem,
+                "greater_than_col": greater_than_col,
+                "less_than_col": less_than_col,
                 **kwargs
             } for row in rows]
 
@@ -153,8 +153,8 @@ class Murd:
             arg_set = {
                 "row": row,
                 "col": col,
-                "greater_than_mem": greater_than_mem,
-                "less_than_mem": less_than_mem,
+                "greater_than_col": greater_than_col,
+                "less_than_col": less_than_col,
                 **kwargs
             }
 

@@ -1,6 +1,6 @@
 import json
 import os
-from edaphic.wipy_utilities import get_timestamp, run_async
+from edaphic.wipy_utilities import get_timestamp
 
 
 class MurdMemory(dict):
@@ -78,16 +78,16 @@ class Murd:
 
             for count, memory in enumerate(primed_mems):
                 memory['CREATIONSTAMP'] = creationstamp_string
-                Murd[self.mem_to_key(memory)] = memory
+                murd[self.mem_to_key(memory)] = memory
 
-        self.murd = json.dumps(Murd)
+        self.murd = json.dumps(murd)
 
     def local_read(
         self,
         row,
         col=None,
-        greater_than_mem=None,
-        less_than_mem=None,
+        greater_than_col=None,
+        less_than_col=None,
         **kwargs
     ):
         murd = json.loads(self.murd)
@@ -101,18 +101,18 @@ class Murd:
             col_prefix = "{}{}".format(prefix, col)
             matched = [match for match in matched if col_prefix in match] 
 
-        # Filter out lower than less_than_mem keys
-        if less_than_mem is not None:
-            lowest_prefix = "{}{}".format(prefix, less_than_mem)
+        # Filter out lower than less_than_col keys
+        if less_than_col is not None:
+            lowest_prefix = "{}{}".format(prefix, less_than_col)
             matched = [match for match in matched if lowest_prefix < match]
 
-        # Filter out greater than greater_than_mem keys
-        if greater_than_mem is not None:
-            greatest_prefix = "{}{}".format(prefix, greater_than_mem)
+        # Filter out greater than greater_than_col keys
+        if greater_than_col is not None:
+            greatest_prefix = "{}{}".format(prefix, greater_than_col)
             matched = [match for match in matched if greatest_prefix > match]
 
         # Create MurdMemory objects for results
-        results = [MurdMemory(**Murd[key]) for key in matched]
+        results = [MurdMemory(**murd[key]) for key in matched]
 
         if 'Limit' in kwargs:
             results = results[:int(kwargs['Limit'])]
@@ -123,8 +123,8 @@ class Murd:
         self,
         row,
         col=None,
-        greater_than=None,
-        less_than=None,
+        greater_than_col=None,
+        less_than_col=None,
         **kwargs,
     ):
         if type(row) is list:
@@ -134,24 +134,24 @@ class Murd:
                 arg_kwargs = {key: value for key, value in kwargs.items()}
                 arg_kwargs['row'] = row
                 arg_kwargs['col'] = col
-                arg_kwargs['less_than_mem'] = row
-                arg_kwargs['greater_than_mem'] = greater_than_mem
+                arg_kwargs['less_than_col'] = row
+                arg_kwargs['greater_than_col'] = greater_than_col
                 arg_sets.append(arg_kwargs)
 
-            results = run_async(self.read, arg_sets)
+            results = [self.read(**arg_set) for arg_set in arg_sets]
             memory_rows = {arg_set['row']: mem for arg_set, mem in results}
 
             return memory_rows
         else:
             arg_set = {key: value for key, value in kwargs.items()}
             arg_set['row'] = row
-            arg_set['less_than_mem'] = less_than_mem
-            arg_set['greater_than_mem'] = greater_than_mem
+            arg_set['less_than_col'] = less_than_col
+            arg_set['greater_than_col'] = greater_than_col
 
             results = []
             for murd in self.murds:
-                ww_results = murd.local_read(**arg_set)
-                results.extend(ww_results)
+                murd_results = murd.local_read(**arg_set)
+                results.extend(murd_results)
 
             return results
 

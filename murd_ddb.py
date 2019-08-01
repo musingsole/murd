@@ -130,16 +130,16 @@ class DDBMurd(Murd):
     def read(self,
              row,
              col=None,
-             greater_than_mem=None,
-             less_than_mem=None,
+             greater_than_col=None,
+             less_than_col=None,
              **kwargs):
         if type(row) is list:
             rows = row
             arg_sets = [{
                 "row": row,
                 "col": col,
-                "greater_than_mem": greater_than_mem,
-                "less_than_mem": less_than_mem,
+                "greater_than_col": greater_than_col,
+                "less_than_col": less_than_col,
                 **kwargs
             } for row in rows]
 
@@ -153,13 +153,13 @@ class DDBMurd(Murd):
             if col is not None:
                 kce = kce & Key("COL").begins_with(col)
 
-            elif greater_than_mem is not None and less_than_mem is not None:
-                kce = kce & Key("COL").between(greater_than_mem, less_than_mem)
+            elif greater_than_col is not None and less_than_col is not None:
+                kce = kce & Key("COL").between(greater_than_col, less_than_col)
 
-            elif greater_than_mem is not None:
-                kce = kce & Key("COL").gt(greater_than_mem)
-            elif less_than_mem is not None:
-                kce = kce & Key("COL").lt(less_than_mem)
+            elif greater_than_col is not None:
+                kce = kce & Key("COL").gt(greater_than_col)
+            elif less_than_col is not None:
+                kce = kce & Key("COL").lt(less_than_col)
 
             kwargs['KeyConditionExpression'] = kce
 

@@ -35,14 +35,14 @@ def read_handler(event):
     body = json.loads(event['body'])
     row = body['row']
     col = body['col'] if 'col' in body else None
-    greater_than_mem = body['greater_than_mem'] if 'greater_than_mem' in body else None
-    less_than_mem = body['less_than_mem'] if 'less_than_mem' in body else None
+    greater_than_col = body['greater_than_col'] if 'greater_than_col' in body else None
+    less_than_col = body['less_than_col'] if 'less_than_col' in body else None
 
     read_kwargs = {
         "row": row,
         "col": col,
-        "greater_than_mem": greater_than_mem,
-        "less_than_mem": less_than_mem
+        "greater_than_col": greater_than_col,
+        "less_than_col": less_than_col
     }
 
     read = murd.read(**read_kwargs)
