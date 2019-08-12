@@ -1,12 +1,4 @@
 import json
-import os
-from datetime import datetime
-from run_async import run_async
-
-
-# Format for interpreting String Timestamps to a Datetime object or storing
-# Datetime objects as String Timestamps
-TIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 
 
 class MurdMemory(dict):
@@ -27,18 +19,9 @@ class Murd:
         stored in a key-value store system. 
 
         Backends:
-            Primary: String
+            Primary: String - JSON, CSV
             Secondary: DynamoDB
             Tertiary: S3, local filestore
-
-        Challenges:
-            Primary:
-                * Table Creation
-                * Simultanenous Request
-
-            Secondary/Tertiary:
-                * Optimize file system (directory, folder, contents) for S3 or
-                  locally managed key-value store
     """
 
     row_col_sep = "|||||"
@@ -50,13 +33,9 @@ class Murd:
         murds=[],
         **kwargs
     ):
-        if name == '':
-            name = os.getenv('murd', 'murd')
         self.name = name
 
         self.murd = murd
-        self.murds = murds
-        self.murds.append(self)
 
     @staticmethod
     def prime_mems(mems):
@@ -76,8 +55,6 @@ class Murd:
         identifier="Unidentified"
     ):
         primed_mems = self.prime_mems(mems)
-        creationstamp = datetime.utcnow()
-        creationstamp_string = creationstamp.strftime(TIME_FORMAT)
 
         murd = json.loads(self.murd)
 
@@ -85,12 +62,11 @@ class Murd:
             print("Storing {} memories".format(len(primed_mems)))
 
             for count, mem in enumerate(primed_mems):
-                mem['CREATIONSTAMP'] = creationstamp_string
                 murd[self.mem_to_key(mem)] = mem
 
         self.murd = json.dumps(murd)
 
-    def local_read(
+    def read(
         self,
         row,
         col=None,
@@ -127,44 +103,6 @@ class Murd:
 
         return results
 
-    def read(
-        self,
-        row,
-        col=None,
-        greater_than_col=None,
-        less_than_col=None,
-        **kwargs
-    ):
-        if type(row) is list:
-            rows = row
-            arg_sets = [{
-                "row": row,
-                "col": col,
-                "greater_than_col": greater_than_col,
-                "less_than_col": less_than_col,
-                **kwargs
-            } for row in rows]
-
-            results = run_async(self.remember, arg_sets)
-            memory_mems = {arg_set['mem']: mem for arg_set, mem in results}
-
-            return memory_mems
-        else:
-            arg_set = {
-                "row": row,
-                "col": col,
-                "greater_than_col": greater_than_col,
-                "less_than_col": less_than_col,
-                **kwargs
-            }
-
-            results = []
-            for murd in self.murds:
-                hm_results = murd.local_read(**arg_set)
-                results.extend(hm_results)
-
-            return results
-
     def delete(self, mems):
         murd = json.loads(self.murd)
         primed_mems = self.prime_mems(mems)
@@ -182,14 +120,28 @@ class Murd:
         self,
         foreign_murd
     ):
-        """ Become aware of other murd so as to read it as well """
-        self.murds.append(foreign_murd)
-
-    def assimilate(
-        self,
-        foreign_murd
-    ):
-        pass
+        """ Join foreign murd into this murd structure """
+        raise Exception("Not implemented")
 
     def __str__(self):
         return self.murd
+
+    def csv_string(self):
+        murd = json.loads(self.murd)
+        cols = []
+        for key, mem in murd.items():
+            new_cols = list(mem.keys())
+            cols.extend(new_cols)
+            cols = list(set(cols))
+        csv_string = "key," + ",".join(cols) + "\n"
+        for key, mem in murd.items():
+            csv_row = key
+            for col in cols:
+                csv_row += ","
+                if col in mem:
+                    csv_row += str(mem[col])
+            csv_row += "\n"
+            csv_string += csv_row
+        return csv_string
+
+
