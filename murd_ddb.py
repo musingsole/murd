@@ -1,7 +1,7 @@
 from datetime import datetime
 import boto3
 from boto3.dynamodb.conditions import Key
-from murd import Murd, MurdMemory, TIME_FORMAT
+from murd import Murd, MurdMemory
 from run_async import run_async, default_log
 
 
@@ -58,7 +58,7 @@ class DDBMurd(Murd):
         return self.tables
 
     def create_murd(self, suffix=""):
-        dt = datetime.utcnow().strftime(TIME_FORMAT)[:10]
+        dt = datetime.utcnow().isoformat()[:10]
         name = "{}{}.{}".format(self.name, suffix, dt)
         create_ddb_table(name)
         self.get_murds()
@@ -82,9 +82,6 @@ class DDBMurd(Murd):
                mems,
                identifier="Unidentified"):
         primed_mems = self.prime_mems(mems)
-        observation_processing_deltas = []
-        writestamp = datetime.utcnow()
-        writestamp_string = writestamp.strftime(TIME_FORMAT)
 
         if len(primed_mems) > 0:
             latest_murd = self.get_latest_murd()
@@ -94,18 +91,8 @@ class DDBMurd(Murd):
             with latest_murd.batch_writer() as writer:
                 count = 0
                 for count, mem in enumerate(primed_mems):
-                    mem['WRITESTAMP'] = writestamp_string
-                    if 'RECEIVESTAMP' in mem:
-                        processing_delta = (writestamp - datetime.strptime(mem['RECEIVESTAMP'], TIME_FORMAT)).total_seconds()
-                        observation_processing_deltas.append(processing_delta)
-
                     mem = MurdMemory(**mem)
                     writer.put_item(Item=mem)
-
-            if observation_processing_deltas:
-                observation_processing_deltas = sorted(observation_processing_deltas)
-                avg_processing_delta = sum(observation_processing_deltas) / len(observation_processing_deltas)
-                print("AverageMurdMemoryProcessing {} seconds".format(avg_processing_delta))
         else:
             print("No observations to upload")
 

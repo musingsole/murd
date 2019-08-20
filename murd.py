@@ -16,7 +16,7 @@ class MurdMemory(dict):
 
 class Murd:
     """ Murd - Matrix: Update, Read, Delate - represents a collection of map memory structures
-        stored in a key-value store system. 
+        stored in a key-value store system.
 
         Backends:
             Primary: String - JSON, CSV
@@ -76,25 +76,18 @@ class Murd:
     ):
         murd = json.loads(self.murd)
 
-        if col is not None:
-            try:
-                return [MurdMemory(**murd[Murd.row_col_to_key(row, col)])]
-            except Exception:
-                raise Exception("Unable to locate mem: {}".format(Murd.row_col_to_key(row, col)))
-
         matched = list(murd.keys())
-
         if col is not None:
             prefix = "{}{}{}".format(row, Murd.row_col_sep, col)
             matched = [key for key in matched if prefix in key]
 
         if less_than_col is not None:
-            minimum = self.row_col_to_key(row, less_than_col)
-            matched = [key for key in matched if key > minimum]
+            maximum = self.row_col_to_key(row, less_than_col)
+            matched = [key for key in matched if key < maximum]
 
         if greater_than_col is not None:
-            maximum = self.row_col_to_key(row, less_than_col)
-            matched = [key for key in matched if maximum > key]
+            minimum = self.row_col_to_key(row, greater_than_col)
+            matched = [key for key in matched if key > minimum]
 
         results = [MurdMemory(**murd[key]) for key in matched]
 
@@ -143,5 +136,3 @@ class Murd:
             csv_row += "\n"
             csv_string += csv_row
         return csv_string
-
-
