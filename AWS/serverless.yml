@@ -59,6 +59,9 @@ functions:
           method: get
       - http:
           path: /murd
+          method: post
+      - http:
+          path: /murd
           method: put
       - http:
           path: /murd

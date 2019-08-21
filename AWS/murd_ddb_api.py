@@ -22,7 +22,7 @@ def update_handler(event):
     identifier = body['identifier'] if 'identifier' in body else 'Unidentified'
 
     # Store new mems in memory
-    murd.update(mems=mems)
+    murd.update(mems=mems, identifier=identifier)
 
     return 200
 
@@ -32,6 +32,7 @@ def read_handler(event):
     # Check authorization
 
     # Get read constraints
+    # TODO: Check query params for request
     body = json.loads(event['body'])
     row = body['row']
     col = body['col'] if 'col' in body else None
@@ -57,21 +58,22 @@ def delete_handler(event):
     # Get new mems from event
     body = json.loads(event['body'])
     mems = body['mems']
- 
-    murd.delete(mems)
-    
-    return 200
+    stubborn_mems = murd.delete(mems)
+
+    return 200, json.dumps(stubborn_mems)
 
 
 def create_lambda_page():
     page = LambdaPage()
     page.add_endpoint("put", "/murd", update_handler, 'application/json')
     page.add_endpoint("put", "/murd/update", update_handler, 'application/json')
-    page.add_endpoint("get", "/murd", read, 'application/json')
-    page.add_endpoint("get", "/murd/read", read, 'application/json')
-    page.add_endpoint("delete", "/murd", delete, 'application/json')
-    page.add_endpoint("delete", "/murd/delete", delete, 'application/json')
-    
+    page.add_endpoint("get", "/murd", read_handler, 'application/json')
+    page.add_endpoint("get", "/murd/read", read_handler, 'application/json')
+    page.add_endpoint("post", "/murd", read_handler, 'application/json')
+    page.add_endpoint("post", "/murd/read", read_handler, 'application/json')
+    page.add_endpoint("delete", "/murd", delete_handler, 'application/json')
+    page.add_endpoint("delete", "/murd/delete", delete_handler, 'application/json')
+
     return page
 
 
@@ -79,4 +81,3 @@ def lambda_handler(event, handler):
     page = create_lambda_page()
     print("Received Event:\n{}".format(event))
     return page.handle_request(event)
-
