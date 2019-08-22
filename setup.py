@@ -1,22 +1,24 @@
-from setuptools import setup
+from setuptools import setup, Extension
 
 
-with open('README.md', 'r') as fh:
-    long_description = fh.read()
+# read the contents of README file
+from os import path
+this_directory = path.abspath(path.dirname(__file__))
+with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
+        long_description = f.read()
 
 
 setup(
-    name='woodwell',
+    name='murd',
     version='0.0.1',
     author='musingsole',
     author_email='musingsole@gmail.com',
-    description='CDRT LWW-Element-Set Tree-Like Key-Value Store. BINGO!'
+    description='CDRT LWW-Element-Set Tree-Like Key-Value Store. BINGO!',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/musingsole/woodwell'
+    url='https://gitlab.com/musingsole/murd',
     install_requires=["boto3"],
-    packages=["woodwell"]
-    package_dir={'': 'lib'},
+    packages=["murd"],
     classifiers=(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

@@ -41,6 +41,7 @@ resources:
                     - execute-api:*
                     - apigateway:Get
                     - api:*
+                    - dynamodb:*
                   Resource: "*"
   
 functions:

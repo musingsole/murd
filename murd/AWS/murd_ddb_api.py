@@ -1,6 +1,6 @@
 import json
 from LambdaPage import LambdaPage
-from murd_dbb import DDBMurd
+from murd_ddb import DDBMurd
 
 
 murd = DDBMurd()
@@ -18,7 +18,7 @@ def update_handler(event):
 
     # Get new mems from event
     body = json.loads(event['body'])
-    mems = body['mems']
+    mems = json.loads(body['mems'])
     identifier = body['identifier'] if 'identifier' in body else 'Unidentified'
 
     # Store new mems in memory
