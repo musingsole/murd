@@ -37,7 +37,7 @@ class MurdClient:
     ):
         mems = self.prime_mems(mems)
         data = {'mems': json.dumps(mems)}
-        resp = put_request(url=self.url, data=data)
+        resp = put_request(url=self.url, json=data)
 
         if resp.status_code != 200:
             raise Exception("Murd update request failed")
@@ -56,9 +56,7 @@ class MurdClient:
             data['greater_than_col'] = greater_than_col
         if less_than_col is not None:
             data['less_than_col'] = less_than_col
-        resp = post_request(url=self.url, data=data)
-        from IPython import embed
-        embed()
+        resp = post_request(url=self.url, json=data)
         if resp.status_code != 200:
             raise Exception("Murd update request failed")
 
@@ -69,7 +67,7 @@ class MurdClient:
     def delete(self, mems):
         mems = self.prime_mems(mems)
         data = {'mems': json.dumps(mems)}
-        resp = delete_request(url=self.url, data=data)
+        resp = delete_request(url=self.url, json=data)
 
         if resp.status_code != 200:
             raise Exception("Murd delete request failed")
