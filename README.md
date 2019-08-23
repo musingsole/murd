@@ -39,14 +39,15 @@ Drop a number of Murd Memories
 ## Memory Backends
 
 ### JSON String
+The    N string backend operates on a single  urd    N object kept in memory. 
 
 ### Local Files
 
-The Local Files backend operates on a series of files containing a woodwell JSON string.
+The Local Files backend operates on a series of files containing JSON strings.
 
 ### S3
 
-The S3 backend operates on a S3 bucket or S3 bucket path containing any number of child S3 bucket paths containing woodwell JSON strings.
+The S3 backend operates on a S3 bucket or S3 bucket path containing any number of child S3 bucket paths containing JSON strings.
 
 ### DynamoDB
 
