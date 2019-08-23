@@ -1,5 +1,5 @@
 # Murd
-Python Management of Matrix-like Key-Value store memories
+Python Management of Matrix-like Key-Value store memories across disparate backends.
 
 ## Memory Backends
 
@@ -50,7 +50,3 @@ The S3 backend operates on a S3 bucket or S3 bucket path containing any number o
 ### DynamoDB
 
 The DynamoDB backend operates on a number of DynamoDB tables containing rows of JSON strings.
-
-# woodwell Compression
-
-## Backend Specific
