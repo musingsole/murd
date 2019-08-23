@@ -13,13 +13,14 @@ Python Management of Matrix-like Key-Value store memories across disparate backe
 ## Murd Memory
 
 A Murd Memory object is made up of at least a "ROW" and "COL" element. These two elements together are treated as a unique identifier for the storage location of the element. Taken together, ideal candidates for the value of 'ROW' and 'COL' are URIs, UUIDs, UTC timestamps, GPS coordinates, and the like.
-
+```
 {
     "ROW":{part of unique identifier},
     "COL":{part of unique identifier},
-    "CREATIONSTAMP": {UTC timestamp of creation},
-    "WRITESTAMP": {UTC timestamp of commitment to memory}
+    "{ARBITRARY_KEY}": "{ARBITRARY_VALUE}"
+    ...
 }
+```
 
 ## Memory Interface
 
