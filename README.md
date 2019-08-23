@@ -39,7 +39,7 @@ Drop a number of Murd Memories
 ## Memory Backends
 
 ### JSON String
-The    N string backend operates on a single  urd    N object kept in memory. 
+The json string backend operates on a single murd json object kept in memory. 
 
 ### Local Files
 
