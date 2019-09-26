@@ -1,1 +1,1 @@
-from murd import *
+from .murd import *

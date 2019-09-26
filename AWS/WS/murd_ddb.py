@@ -2,7 +2,7 @@ from datetime import datetime
 import boto3
 from boto3.dynamodb.conditions import Key
 from murd import Murd, MurdMemory
-from murd.run_async import run_async, default_log
+from run_async import run_async, default_log
 
 
 def list_all_tablenames():
