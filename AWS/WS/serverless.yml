@@ -21,7 +21,7 @@ resources:
       Type: AWS::IAM::Role
       Properties:
         Path: /murd/
-        RoleName: MurdRole
+        RoleName: MurdWSRole
         AssumeRolePolicyDocument:
           Version: '2012-10-17'
           Statement:

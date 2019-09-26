@@ -1,5 +1,4 @@
 import json
-from LambdaPage import LambdaPage
 from murd_ddb import DDBMurd
 
 
@@ -9,6 +8,22 @@ murd = DDBMurd()
 class Curator:
     def __init__(self, name=""):
         pass
+
+
+def connect_handler(event):
+    """ Handle new connetions to WS"""
+    print("Handling connection")
+    return {"statusCode": 200}
+
+
+def disconnect_handler(event):
+    """ Handle disconnections from WS"""
+    return {"statusCode": 200}
+
+
+def default_handler(event):
+    """ Handle unrecognized routes"""
+    return {"statusCode": 200}
 
 
 def update_handler(event):
@@ -24,7 +39,7 @@ def update_handler(event):
     # Store new mems in memory
     murd.update(mems=mems, identifier=identifier)
 
-    return 200
+    return {"statusCode": 200}
 
 
 def read_handler(event):
@@ -48,7 +63,7 @@ def read_handler(event):
 
     read = murd.read(**read_kwargs)
 
-    return 200, json.dumps(read)
+    return {"statusCode": 200, "read": read}
 
 
 def delete_handler(event):
@@ -60,24 +75,31 @@ def delete_handler(event):
     mems = body['mems']
     stubborn_mems = murd.delete(mems)
 
-    return 200, json.dumps(stubborn_mems)
+    return {"statusCode": 200, "stubborn_mems": stubborn_mems}
 
 
-def create_lambda_page():
-    page = LambdaPage()
-    page.add_endpoint("put", "/murd", update_handler, 'application/json')
-    page.add_endpoint("put", "/murd/update", update_handler, 'application/json')
-    page.add_endpoint("get", "/murd", read_handler, 'application/json')
-    page.add_endpoint("get", "/murd/read", read_handler, 'application/json')
-    page.add_endpoint("post", "/murd", read_handler, 'application/json')
-    page.add_endpoint("post", "/murd/read", read_handler, 'application/json')
-    page.add_endpoint("delete", "/murd", delete_handler, 'application/json')
-    page.add_endpoint("delete", "/murd/delete", delete_handler, 'application/json')
-
-    return page
+def serve_subscribers(event):
+    print("Serving subscribers")
 
 
-def lambda_handler(event, handler):
-    page = create_lambda_page()
+def lambda_handler(event, lambda_context):
     print("Received Event:\n{}".format(event))
-    return page.handle_request(event)
+
+    if 'serve_subscribers' in event:
+        serve_subscribers(event)
+    elif 'requestContext' in event:
+        request_context = event['requestContext']
+        if '$connect' == request_context['routeKey']:
+            return_value = connect_handler(event)
+        elif '$disconnect' == request_context['routeKey']:
+            return_value = disconnect_handler(event)
+        elif 'update' == request_context['routeKey']:
+            return_value = update_handler(event)
+        elif 'read' == request_context['routeKey']:
+            return_value = read_handler(event)
+        elif 'delete' == request_context['routeKey']:
+            return_value = delete_handler(event)
+        else:
+            return_value = default_handler(event)
+
+    return return_value
