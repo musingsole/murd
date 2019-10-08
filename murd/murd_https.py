@@ -1,20 +1,12 @@
 import json
-from requests import post as post_request
-from requests import put as put_request
-from requests import delete as delete_request
+from functools import partial
+from urllib3 import PoolManager
+
+from .murd import MurdMemory
 
 
-class MurdMemory(dict):
-    required_keys = ["ROW", "COL"]
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        for req_key in MurdMemory.required_keys:
-            if req_key not in self:
-                raise Exception("{} must be defined".format(req_key))
-
-        for key, value in self.items():
-            self[key] = json.dumps(value) if not isinstance(value, str) else value
+_http = PoolManager()
+_request = _http.request
 
 
 class MurdClient:
@@ -37,9 +29,10 @@ class MurdClient:
     ):
         mems = self.prime_mems(mems)
         data = {'mems': json.dumps(mems)}
-        resp = put_request(url=self.url, json=data)
+        resp = _request("PUT", self.url,
+                       body=json.dumps(data).encode("utf-8"))
 
-        if resp.status_code != 200:
+        if resp.status != 200:
             raise Exception("Murd update request failed")
 
     def read(
@@ -56,21 +49,23 @@ class MurdClient:
             data['greater_than_col'] = greater_than_col
         if less_than_col is not None:
             data['less_than_col'] = less_than_col
-        resp = post_request(url=self.url, json=data)
-        if resp.status_code != 200:
+        resp = _request("POST", self.url,
+                        body=json.dumps(data).encode("utf-8"))
+        if resp.status != 200:
             raise Exception("Murd update request failed")
 
-        read_data = json.loads(resp.text)
+        read_data = json.loads(resp.data.decode("utf-8"))
         read_data = [MurdMemory(**rd) for rd in read_data]
         return read_data
 
     def delete(self, mems):
         mems = self.prime_mems(mems)
         data = {'mems': json.dumps(mems)}
-        resp = delete_request(url=self.url, json=data)
+        resp = _request("DELETE", self.url,
+                       body=json.dumps(data).encode('utf-8'))
 
-        if resp.status_code != 200:
+        if resp.status != 200:
             raise Exception("Murd delete request failed")
 
-        stubborn_mems = json.loads(resp.text)
+        stubborn_mems = json.loads(resp.data.decode("utf-8"))
         return [MurdMemory(**sm) for sm in stubborn_mems]
