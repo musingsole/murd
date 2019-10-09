@@ -1,21 +1,17 @@
 import json
-from urllib3 import PoolManager
-
-from .murd import MurdMemory
-
-
-_http = PoolManager()
-_request = _http.request
+from websocket import create_connection
+from murd import MurdMemory
 
 
-class MurdClient:
-    """ Murd API Client """
+class MurdWSClient:
+    """ Murd WebSocket API Client """
 
     def __init__(
         self,
         url
     ):
         self.url = url
+        self.ws = create_connection(self.url)
 
     @staticmethod
     def prime_mems(mems):
@@ -27,12 +23,8 @@ class MurdClient:
         identifier="Unidentified"
     ):
         mems = self.prime_mems(mems)
-        data = {'mems': json.dumps(mems)}
-        resp = _request("PUT", self.url,
-                        body=json.dumps(data).encode("utf-8"))
-
-        if resp.status != 200:
-            raise Exception("Murd update request failed")
+        update_request = {'mems': json.dumps(mems), 'route': 'update'}
+        self.ws.send(json.dumps(update_request))
 
     def read(
         self,
@@ -48,23 +40,20 @@ class MurdClient:
             data['greater_than_col'] = greater_than_col
         if less_than_col is not None:
             data['less_than_col'] = less_than_col
-        resp = _request("POST", self.url,
-                        body=json.dumps(data).encode("utf-8"))
-        if resp.status != 200:
-            raise Exception("Murd update request failed")
+        read_request = {'route': 'read', 'request': json.dumps(data)}
+        self.ws.send(json.dumps(read_request))
 
-        read_data = json.loads(resp.data.decode("utf-8"))
+        # Listen for read response
+        read_data = self.ws.recv()
+        read_data = json.loads(read_data)
         read_data = [MurdMemory(**rd) for rd in read_data]
         return read_data
 
     def delete(self, mems):
         mems = self.prime_mems(mems)
-        data = {'mems': json.dumps(mems)}
-        resp = _request("DELETE", self.url,
-                        body=json.dumps(data).encode('utf-8'))
+        delete_request = {'mems': json.dumps(mems), 'route': 'delete'}
+        self.ws.send(json.dumps(delete_request))
 
-        if resp.status != 200:
-            raise Exception("Murd delete request failed")
-
-        stubborn_mems = json.loads(resp.data.decode("utf-8"))
+        stubborn_mems = self.ws.recv()
+        stubborn_mems = json.loads(stubborn_mems)
         return [MurdMemory(**sm) for sm in stubborn_mems]

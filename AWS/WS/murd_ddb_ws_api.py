@@ -1,8 +1,13 @@
 import json
-from murd_ddb import DDBMurd
+from collections import defaultdict
+from uuid import uuid4
+from requests import post as post_request
+from murd_ddb import DDBMurd, MurdMemory
 
 
 murd = DDBMurd()
+
+CID_UUID_DELIMITER = ">><<"
 
 
 class Curator:
@@ -13,27 +18,34 @@ class Curator:
 def connect_handler(event):
     """ Handle new connetions to WS"""
     print("Handling connection")
+    connection_id = event['requestContext']['connectionId']
+    host = event['requestContext']['domainName']
+    print(f"From '{connection_id}' at '{host}'")
+    murd.update([MurdMemory(ROW="ws_connections",
+                            COL=connection_id,
+                            HOST=host)],
+                identifier="murd_ddb_ws_api")
     return {"statusCode": 200}
 
 
 def disconnect_handler(event):
     """ Handle disconnections from WS"""
+    print("Handling disconnection")
+    connection_id = event['requestContext']['connectionId']
+    print(f"From {connection_id}")
+    murd.delete([MurdMemory(ROW="ws_connections",
+                            COL=connection_id)],
+                identifier="murd_ddb_ws_api")
     return {"statusCode": 200}
 
 
-def default_handler(event):
-    """ Handle unrecognized routes"""
-    return {"statusCode": 200}
-
-
-def update_handler(event):
+def update_handler(body):
     """ /update Endpoint Handler """
 
     # Check authorization
 
     # Get new mems from event
-    body = json.loads(event['body'])
-    mems = json.loads(body['mems'])
+    mems = body['mems']
     identifier = body['identifier'] if 'identifier' in body else 'Unidentified'
 
     # Store new mems in memory
@@ -42,13 +54,12 @@ def update_handler(event):
     return {"statusCode": 200}
 
 
-def read_handler(event):
+def read_handler(connection_id, body):
     """ /read Endpoint Handler """
     # Check authorization
 
     # Get read constraints
     # TODO: Check query params for request
-    body = json.loads(event['body'])
     row = body['row']
     col = body['col'] if 'col' in body else None
     greater_than_col = body['greater_than_col'] if 'greater_than_col' in body else None
@@ -61,25 +72,67 @@ def read_handler(event):
         "less_than_col": less_than_col
     }
 
-    read = murd.read(**read_kwargs)
+    subscription_memory = MurdMemory(
+        ROW="ws_subscriptions",
+        COL=f"{connection_id}{CID_UUID_DELIMITER}{uuid4()}",
+        SUBSCRIPTION=read_kwargs
+    )
+    murd.update([subscription_memory], identifier="MurdWSClientSubscribe")
 
-    return {"statusCode": 200, "read": read}
+    return {"statusCode": 200}
 
 
-def delete_handler(event):
+def delete_handler(body):
     """ /delete Endpoint Handler """
     # Check authorization
 
     # Get new mems from event
-    body = json.loads(event['body'])
     mems = body['mems']
     stubborn_mems = murd.delete(mems)
 
     return {"statusCode": 200, "stubborn_mems": stubborn_mems}
 
 
+def default_handler(event):
+    """ Handle unrecognized routes"""
+    connection_id = event['requestContext']['connectionId']
+    body = json.loads(event['body'])
+    if body['route'] == 'update':
+        return update_handler(body)
+    elif body['route'] == 'read':
+        return read_handler(connection_id, body)
+    elif body['route'] == 'delete':
+        return delete_handler(body)
+    else:
+        print(f"Unrecognized route: {body['route']}")
+        return {"statusCode": 200}
+
+
 def serve_subscribers(event):
     print("Serving subscribers")
+    subscriptions = murd.read(row="ws_subscriptions")
+    subs_by_cid = defaultdict(lambda: [])
+    for sub in subscriptions:
+        subs_by_cid[sub['COL'].split(CID_UUID_DELIMITER)[0]].append(sub)
+    for cid, subs in subs_by_cid.items():
+        try:
+            print(f"Checking for {cid} connection")
+            connection = murd.read(row="ws_connections", col=cid)[0]
+            print("Connection confirmed")
+        except IndexError:
+            print(f"Connection {cid} expired")
+            murd.delete(subs)
+            continue
+
+        data = []
+        for sub in subs:
+            read_kwargs = json.loads(sub['SUBSCRIPTION'])
+            print("Sub: {}".format(sub))
+            mems = murd.read(**read_kwargs)
+            data.extend(mems)
+        host = connection['HOST']
+        conn_url = f"https://{host}/prod/@connections/{cid}"
+        post_request(conn_url, json.dumps(data))
 
 
 def lambda_handler(event, lambda_context):
@@ -90,16 +143,8 @@ def lambda_handler(event, lambda_context):
     elif 'requestContext' in event:
         request_context = event['requestContext']
         if '$connect' == request_context['routeKey']:
-            return_value = connect_handler(event)
+            return connect_handler(event)
         elif '$disconnect' == request_context['routeKey']:
-            return_value = disconnect_handler(event)
-        elif 'update' == request_context['routeKey']:
-            return_value = update_handler(event)
-        elif 'read' == request_context['routeKey']:
-            return_value = read_handler(event)
-        elif 'delete' == request_context['routeKey']:
-            return_value = delete_handler(event)
+            return disconnect_handler(event)
         else:
-            return_value = default_handler(event)
-
-    return return_value
+            return default_handler(event)

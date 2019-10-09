@@ -93,6 +93,7 @@ class DDBMurd(Murd):
                 for count, mem in enumerate(primed_mems):
                     mem = MurdMemory(**mem)
                     writer.put_item(Item=mem)
+            print(f"Stored {len(mems)} MurdMemories")
         else:
             print("No observations to upload")
 
@@ -119,6 +120,7 @@ class DDBMurd(Murd):
              col=None,
              greater_than_col=None,
              less_than_col=None,
+             identifier="Unidentified",
              **kwargs):
         if type(row) is list:
             rows = row
@@ -173,9 +175,9 @@ class DDBMurd(Murd):
                     )
                 except Exception:
                     stubborn_mems.append(mem)
-
+        print(f"Deleted {len(mems) - len(stubborn_mems)} MurdMemories")
         return stubborn_mems
 
-    def delete(self, mems):
+    def delete(self, mems, identifier="Unidentified"):
         arg_sets = [[table, mems] for table in self.tables.values()]
         run_async(self.delete_from_table, arg_sets, log=default_log)
