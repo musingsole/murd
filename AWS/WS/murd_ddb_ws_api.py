@@ -1,7 +1,7 @@
 import json
 from collections import defaultdict
 from uuid import uuid4
-from requests import post as post_request
+import boto3
 from murd_ddb import DDBMurd, MurdMemory
 
 
@@ -131,8 +131,11 @@ def serve_subscribers(event):
             mems = murd.read(**read_kwargs)
             data.extend(mems)
         host = connection['HOST']
-        conn_url = f"https://{host}/prod/@connections/{cid}"
-        post_request(conn_url, json.dumps(data))
+        client = boto3.client('apigatewaymanagementapi',
+                              endpoint_url=f"https://{host}")
+        client.post_to_connection(
+            Data=json.dumps(data).encode('utf-8'),
+            ConnectionId=cid)
 
 
 def lambda_handler(event, lambda_context):
