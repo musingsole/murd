@@ -130,11 +130,13 @@ def serve_subscribers(event):
             print("Sub: {}".format(sub))
             mems = murd.read(**read_kwargs)
             data.extend(mems)
-        host = connection['HOST']
+        endpoint_url = f"https://{connection['HOST']}/prod"
+        print(f"Sending data to {endpoint_url}")
+        filled_subscription = {"data": data, "meta_data": "foo"}
         client = boto3.client('apigatewaymanagementapi',
-                              endpoint_url=f"https://{host}")
+                              endpoint_url=endpoint_url)
         client.post_to_connection(
-            Data=json.dumps(data).encode('utf-8'),
+            Data=json.dumps(filled_subscription).encode('utf-8'),
             ConnectionId=cid)
 
 
@@ -151,3 +153,10 @@ def lambda_handler(event, lambda_context):
             return disconnect_handler(event)
         else:
             return default_handler(event)
+    else:
+        print("Unrecognized Event")
+        serve_subscribers(None)
+
+
+if __name__ == "__main__":
+    serve_subscribers(None)
