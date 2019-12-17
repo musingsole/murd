@@ -10,7 +10,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='murd',
-    version='0.0.3',
+    version='0.1.0',
     author='musingsole',
     author_email='musingsole@gmail.com',
     description='CDRT LWW-Element-Set Tree-Like Key-Value Store. BINGO!',

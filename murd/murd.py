@@ -13,6 +13,10 @@ class MurdMemory(dict):
         for key, value in self.items():
             self[key] = json.dumps(value) if not isinstance(value, str) else value
 
+    @classmethod
+    def prime_mems(cls, mems):
+        return list({(cls(**ob)['ROW'], cls(**ob)['COL']): ob for ob in mems}.values())
+
 
 class Murd:
     """ Murd - Matrix: Update, Read, Delate - represents a collection of map memory structures
@@ -34,12 +38,8 @@ class Murd:
         **kwargs
     ):
         self.name = name
-
+        json.loads(murd)
         self.murd = murd
-
-    @staticmethod
-    def prime_mems(mems):
-        return list({(MurdMemory(**mem)['ROW'], MurdMemory(**mem)['COL']): mem for mem in mems}.values())
 
     @staticmethod
     def mem_to_key(mem):
@@ -54,7 +54,7 @@ class Murd:
         mems,
         identifier="Unidentified"
     ):
-        primed_mems = self.prime_mems(mems)
+        primed_mems = MurdMemory.prime_mems(mems)
 
         murd = json.loads(self.murd)
 
@@ -98,7 +98,7 @@ class Murd:
 
     def delete(self, mems):
         murd = json.loads(self.murd)
-        primed_mems = self.prime_mems(mems)
+        primed_mems = MurdMemory.prime_mems(mems)
         keys = [self.mem_to_key(m) for m in primed_mems]
         for key in keys:
             if key not in murd:

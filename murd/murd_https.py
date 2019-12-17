@@ -8,7 +8,7 @@ _http = PoolManager()
 _request = _http.request
 
 
-class MurdClient:
+class MurdHTTPClient:
     """ Murd API Client """
 
     def __init__(
@@ -17,16 +17,12 @@ class MurdClient:
     ):
         self.url = url
 
-    @staticmethod
-    def prime_mems(mems):
-        return list({(MurdMemory(**ob)['ROW'], MurdMemory(**ob)['COL']): ob for ob in mems}.values())
-
     def update(
         self,
         mems,
         identifier="Unidentified"
     ):
-        mems = self.prime_mems(mems)
+        mems = MurdMemory.prime_mems(mems)
         data = {'mems': json.dumps(mems)}
         resp = _request("PUT", self.url,
                         body=json.dumps(data).encode("utf-8"))
@@ -58,7 +54,7 @@ class MurdClient:
         return read_data
 
     def delete(self, mems):
-        mems = self.prime_mems(mems)
+        mems = MurdMemory.prime_mems(mems)
         data = {'mems': json.dumps(mems)}
         resp = _request("DELETE", self.url,
                         body=json.dumps(data).encode('utf-8'))
