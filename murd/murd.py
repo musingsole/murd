@@ -1,4 +1,5 @@
 import json
+from .run_async import run_async
 
 
 class MurdMemory(dict):
@@ -40,6 +41,8 @@ class Murd:
         self.name = name
         json.loads(murd)
         self.murd = murd
+        self.murds = murds
+        self.murds.append(self)
 
     @staticmethod
     def mem_to_key(mem):
@@ -66,6 +69,37 @@ class Murd:
 
         self.murd = json.dumps(murd)
 
+    @staticmethod
+    def read_murd(
+        Murd,
+        row,
+        col=None,
+        greater_than_col=None,
+        less_than_col=None,
+        **kwargs
+    ):
+        murd = json.loads(Murd.murd)
+
+        matched = list(murd.keys())
+        if col is not None:
+            prefix = "{}{}{}".format(row, Murd.row_col_sep, col)
+            matched = [key for key in matched if prefix in key]
+
+        if less_than_col is not None:
+            maximum = Murd.row_col_to_key(row, less_than_col)
+            matched = [key for key in matched if key < maximum]
+
+        if greater_than_col is not None:
+            minimum = Murd.row_col_to_key(row, greater_than_col)
+            matched = [key for key in matched if key > minimum]
+
+        results = [MurdMemory(**murd[key]) for key in matched]
+
+        if 'Limit' in kwargs:
+            results = results[:kwargs['Limit']]
+
+        return results
+
     def read(
         self,
         row,
@@ -74,26 +108,28 @@ class Murd:
         less_than_col=None,
         **kwargs
     ):
-        murd = json.loads(self.murd)
+        return self.read_murd(self, row, col, greater_than_col, less_than_col, **kwargs)
 
-        matched = list(murd.keys())
-        if col is not None:
-            prefix = "{}{}{}".format(row, Murd.row_col_sep, col)
-            matched = [key for key in matched if prefix in key]
-
-        if less_than_col is not None:
-            maximum = self.row_col_to_key(row, less_than_col)
-            matched = [key for key in matched if key < maximum]
-
-        if greater_than_col is not None:
-            minimum = self.row_col_to_key(row, greater_than_col)
-            matched = [key for key in matched if key > minimum]
-
-        results = [MurdMemory(**murd[key]) for key in matched]
-
-        if 'Limit' in kwargs:
-            results = results[:kwargs['Limit']]
-
+    def read_all(
+        self,
+        row,
+        col=None,
+        greater_than_col=None,
+        less_than_col=None,
+        **kwargs
+    ):
+        read_arg_sets = [{
+            "Murd": murd,
+            "row": row,
+            "col": col,
+            "greater_than_col": greater_than_col,
+            "less_than_col": less_than_col,
+            **kwargs
+        } for murd in self.murds]
+        read_arg_sets, result_sets = zip(*run_async(self.read_murd, read_arg_sets))
+        results = []
+        for result_set in result_sets:
+            results.extend(result_set)
         return results
 
     def delete(self, mems):
@@ -114,7 +150,10 @@ class Murd:
         foreign_murd
     ):
         """ Join foreign murd into this murd structure """
-        raise Exception("Not implemented")
+        if foreign_murd not in self.murds:
+            self.murds.append(foreign_murd)
+        if self not in foreign_murd.murds:
+            foreign_murd.murds.append(self)
 
     def __str__(self):
         return self.murd

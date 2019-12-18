@@ -23,13 +23,7 @@ class MurdS3Client:
     ):
         mems = MurdMemory.prime_mems(mems)
         data = {'mems': json.dumps(mems)}
-        resp = self.
-        resp = _request("PUT", self.url,
-                        body=json.dumps(data).encode("utf-8"))
-
-
-        if resp.status != 200:
-            raise Exception("Murd update request failed")
+        raise Exception("Murd update request failed")
 
     def read(
         self,
