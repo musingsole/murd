@@ -1,4 +1,5 @@
 import json
+from .run_async import run_async
 
 
 row_col_sep = "|||||"
@@ -19,7 +20,9 @@ class MurdMemory(dict):
 
     @classmethod
     def prime_mems(cls, mems: list) -> dict:
-        return {cls.mem_to_key(mem): mem for mem in mems}
+        return {cls.mem_to_key(mem): ob for ob in mems}
+        return list({(cls(**ob)['ROW'], cls(**ob)['COL']):
+                     ob for ob in mems}.values())
 
     @staticmethod
     def row_col_to_key(row, col):
@@ -99,6 +102,31 @@ class Murd:
 
         return results
 
+    def read_all(
+        self,
+        row,
+        col=None,
+        greater_than_col=None,
+        less_than_col=None,
+        **kwargs
+    ):
+        def read_murd(Murd, **kwargs):
+            return Murd.read(**kwargs)
+
+        read_arg_sets = [{
+            "Murd": murd,
+            "row": row,
+            "col": col,
+            "greater_than_col": greater_than_col,
+            "less_than_col": less_than_col,
+            **kwargs
+        } for murd in self.murds]
+        read_arg_sets, result_sets = zip(*run_async(read_murd, read_arg_sets))
+        results = []
+        for result_set in result_sets:
+            results.extend(result_set)
+        return results
+
     def delete(self, mems):
         murd = json.loads(self.murd)
         primed_mems = MurdMemory.prime_mems(mems)
@@ -111,3 +139,40 @@ class Murd:
             murd.pop(key)
 
         self.murd = json.dumps(murd)
+
+    def connect(
+        self,
+        foreign_murd
+    ):
+        """ Join foreign murd into this murd structure """
+        if foreign_murd not in self.murds:
+            self.murds.append(foreign_murd)
+        if self not in foreign_murd.murds:
+            foreign_murd.murds.append(self)
+
+    def extend(
+        self,
+        foreign_murd
+    ):
+        self.update(json.loads(foreign_murd.murd))
+
+    def __str__(self):
+        return self.murd
+
+    def csv_string(self):
+        murd = json.loads(self.murd)
+        cols = []
+        for key, mem in murd.items():
+            new_cols = list(mem.keys())
+            cols.extend(new_cols)
+            cols = list(set(cols))
+        csv_string = "key," + ",".join(cols) + "\n"
+        for key, mem in murd.items():
+            csv_row = key
+            for col in cols:
+                csv_row += ","
+                if col in mem:
+                    csv_row += str(mem[col])
+            csv_row += "\n"
+            csv_string += csv_row
+        return csv_string

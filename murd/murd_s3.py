@@ -21,7 +21,8 @@ class MurdS3Client:
     def retrieve_s3_summaries(self, row_prefix):
         s3_client = boto3.client("s3")
         try:
-            object_summaries = [os for os in self.bucket.objects.all() if str(row_prefix) in os.key]
+            object_summaries = [
+                os for os in self.bucket.objects.all() if str(row_prefix) in os.key]
         except s3_client.exceptions.NoSuchBucket:
             raise Exception("Error accessing bucket {self.bucket_name}")
 
@@ -31,15 +32,21 @@ class MurdS3Client:
         object_murd = Murd()
         try:
             read_data = BytesIO()
-            data = self.bucket.download_fileobj(Key=row, Fileobj=read_data)
+            self.bucket.download_fileobj(Key=row, Fileobj=read_data)
             read_data.seek(0)
             read_data = read_data.read().decode()
             object_murd = Murd(name=row, murd=read_data)
-        except Exception as e:
+        except Exception:
             if not allow_missing:
                 raise Exception(f"Unable to process data from {row}")
 
         return object_murd
+
+    def retrieve_murd_rows(self, rows, allow_missing=True):
+        return run_async(
+            self.retrieve_murd_row,
+            [{"row": row,
+              "allow_missing": allow_missing} for row in rows])
 
     def update(
         self,
@@ -77,7 +84,6 @@ class MurdS3Client:
         greater_than_col=None,
         less_than_col=None
     ):
-        s3_client = boto3.client("s3")
         object_summaries = self.retrieve_s3_summaries(row)
         kwargs = [{"row": os.key} for os in object_summaries]
         kwargs, all_murds = zip(*run_async(self.retrieve_murd_row, kwargs))
@@ -92,6 +98,8 @@ class MurdS3Client:
 
     def delete(self, mems):
         mems = MurdMemory.prime_mems(mems)
+        rows = set([mem['ROW'] for mem in mems])
+        kwargs, all_murds = zip(*self.retrieve_murd_rows(rows))
 
         s3_client = boto3.client("s3")
         s3_client.delete_object()

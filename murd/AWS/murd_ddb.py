@@ -130,7 +130,7 @@ class DDBMurd(Murd):
                 **kwargs
             } for row in rows]
 
-            results = run_async(self.remember, arg_sets)
+            results = run_async(self.read, arg_sets)
             mem_mems = {arg_set['mem']: mem for arg_set, mem in results}
 
             return mem_mems
