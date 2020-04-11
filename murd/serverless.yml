@@ -1,0 +1,46 @@
+service: ddbmurdapi
+package:
+  individually: false
+
+provider:
+  name: aws
+  stage: prod
+  runtime: python3.6
+  region: us-east-1
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:ListTables
+      Resource: "arn:aws:dynamodb:*"
+    - Effect: Allow
+      Action:
+        - dynamodb:*
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/murd*"
+
+plugins:
+  - serverless-python-requirements
+custom:
+  pythonRequirements:
+    dockerizePip: non-linux
+    noDeploy: []
+
+functions:
+  ddbmurdapi:
+    name: ddbmurdapi
+    handler: murd_ddb_api.lambda_handler
+    memorySize: 128
+    timeout: 30
+    events:
+      - http:
+          path: /murd
+          method: get
+      - http:
+          path: /murd
+          method: post
+      - http:
+          path: /murd
+          method: put
+      - http:
+          path: /murd
+          method: delete
+
