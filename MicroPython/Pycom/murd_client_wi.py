@@ -14,7 +14,8 @@ class MurdMemory(dict):
                 raise Exception("{} must be defined".format(req_key))
 
         for key, value in self.items():
-            self[key] = json.dumps(value) if not isinstance(value, str) else value
+            self[key] = json.dumps(value) \
+                if not isinstance(value, str) else value
 
 
 class MurdClient:
@@ -28,7 +29,8 @@ class MurdClient:
 
     @staticmethod
     def prime_mems(mems):
-        return list({(MurdMemory(**ob)['ROW'], MurdMemory(**ob)['COL']): ob for ob in mems}.values())
+        return list({(MurdMemory(**ob)['ROW'],
+                      MurdMemory(**ob)['COL']): ob for ob in mems}.values())
 
     def update(
         self,
