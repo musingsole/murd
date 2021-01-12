@@ -52,9 +52,8 @@ class Murd:
         murd = json.loads(self.murd)
 
         matched = list(murd.keys())
-        if col is not None:
-            prefix = "{}{}{}".format(row, self.row_col_sep, col)
-            matched = [key for key in matched if prefix in key]
+        prefix = "{}{}{}".format(row, self.row_col_sep, col)
+        matched = [key for key in matched if prefix in key]
 
         if less_than_col is not None:
             maximum = self.row_col_to_key(row, less_than_col)
