@@ -44,7 +44,7 @@ class Murd:
     def read(
         self,
         row,
-        col=None,
+        col="",
         greater_than_col=None,
         less_than_col=None,
         **kwargs
@@ -52,15 +52,15 @@ class Murd:
         murd = json.loads(self.murd)
 
         matched = list(murd.keys())
-        prefix = "{}{}{}".format(row, self.row_col_sep, col)
-        matched = [key for key in matched if prefix in key]
+        prefix = "{}{}{}".format(row, MurdMemory.row_col_sep, col)
+        matched = [key for key in matched if prefix in key[:len(prefix)]]
 
         if less_than_col is not None:
-            maximum = self.row_col_to_key(row, less_than_col)
+            maximum = MurdMemory.row_col_to_key(row, less_than_col)
             matched = [key for key in matched if key < maximum]
 
         if greater_than_col is not None:
-            minimum = self.row_col_to_key(row, greater_than_col)
+            minimum = MurdMemory.row_col_to_key(row, greater_than_col)
             matched = [key for key in matched if key > minimum]
 
         results = [MurdMemory(**murd[key]) for key in matched]
@@ -73,7 +73,7 @@ class Murd:
     def delete(self, mems):
         murd = json.loads(self.murd)
         primed_mems = MurdMemory.prime_mems(mems)
-        keys = [self.mem_to_key(m) for m in primed_mems]
+        keys = [MurdMemory.mem_to_key(m) for m in primed_mems]
         for key in keys:
             if key not in murd:
                 raise Exception("MurdMemory {} not found!".format(key))

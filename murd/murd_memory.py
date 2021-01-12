@@ -5,6 +5,7 @@ row_col_sep = "|||||"
 
 
 class MurdMemory(dict):
+    row_col_sep = row_col_sep
     required_keys = ["ROW", "COL"]
 
     def __init__(self, **kwargs):
